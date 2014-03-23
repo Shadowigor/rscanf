@@ -84,6 +84,7 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 				if(subrepcount < 0)
 					return -5;
 				repeat(file, fmt, va, subrepcount, subrepdelim, subrepcount * alloclen, isfirst);
+				continue;
 			}
 
 			if(**fmt == '%')
