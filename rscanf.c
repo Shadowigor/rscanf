@@ -53,11 +53,11 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 	static int act_fmt = 0;
 	static void *args[MAX_ARGS] = {NULL};
 	static int arg_actrep[MAX_ARGS] = {0};
+	static char ch;
+
 	char subrepdelim[MAX_DELIM_LEN];
 	int subrepcount, suballoc;
-
 	int i;
-	char ch;
 	int act_fmt_bak;
 	char str[STR_LEN];
 	char *fmt_start, *repdelim_bak;
@@ -80,10 +80,10 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 
 			if(**fmt == '(')
 			{
-				subrepcount = getRepCount(fmt, subrepdelim, suballoc);
+				subrepcount = getRepCount(fmt, subrepdelim, &suballoc);
 				if(subrepcount < 0)
 					return -5;
-
+				repeat(file, fmt, va, subrepcount, subrepdelim, subrepcount * alloclen, isfirst);
 			}
 
 			if(**fmt == '%')
@@ -142,6 +142,8 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 			(*fmt)++;
 		}
 		repcount--;
+		if(repcount <= 0)
+			break;
 		isfirst = 0;
 		act_fmt = act_fmt_bak;
 
