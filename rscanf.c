@@ -1,13 +1,20 @@
 
 #include "rscanf.h"
+#include <string.h>
 
 #define MAX_DELIM_LEN	50
 #define MAX_ARGS		50
 #define STR_LEN			50
 
-static int getRepCount(char **fmt, char *repdelim, int *alloc)
+static int act_fmt;
+static void *args[MAX_ARGS];
+static int arg_actrep[MAX_ARGS];
+static char ch;
+static void *reppointer[MAX_ARGS][2];
+
+static int getRepCount(char **fmt, va_list va, char *repdelim, int *alloc)
 {
-	int num;
+	int num, i;
 	char *end;
 
 	if(**fmt != '(')
@@ -29,7 +36,44 @@ static int getRepCount(char **fmt, char *repdelim, int *alloc)
 
 	*fmt = end;
 	if(**fmt != ',')
-		return -1;
+	{
+		if(**fmt == '*')
+		{
+			for(i = 0; i < MAX_ARGS; i++)
+			{
+				if((char*)(reppointer[i][1]) == *fmt)
+				{
+					reppointer[i][0]++;
+					num = *((int*)reppointer[i][0]);
+					break;
+				}
+
+				if(reppointer[i][0] == NULL)
+				{
+					int **g = va_arg(va, int**);
+					reppointer[i][0] = *g;
+//					reppointer[i][0] = *(va_arg(va, int**));
+					num = *((int*)reppointer[i][0]);
+					reppointer[i][1] = *fmt;
+					break;
+				}
+			}
+			if(i == MAX_ARGS)
+				return -1;
+
+			(*fmt)++;
+			if(**fmt != ',')
+				return -1;
+		}
+		else
+		{
+			return -1;
+		}
+	}
+	else if(*alloc == 1)
+	{
+		num = *(va_arg(va, int*));
+	}
 
 	(*fmt)++;
 
@@ -50,11 +94,6 @@ static int getRepCount(char **fmt, char *repdelim, int *alloc)
 
 static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdelim, int alloclen, int isfirst)
 {
-	static int act_fmt = 0;
-	static void *args[MAX_ARGS] = {NULL};
-	static int arg_actrep[MAX_ARGS] = {0};
-	static char ch;
-
 	char subrepdelim[MAX_DELIM_LEN];
 	int subrepcount, suballoc;
 	int i;
@@ -80,7 +119,7 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 
 			if(**fmt == '(')
 			{
-				subrepcount = getRepCount(fmt, subrepdelim, &suballoc);
+				subrepcount = getRepCount(fmt, va, subrepdelim, &suballoc);
 				if(subrepcount < 0)
 					return -5;
 				repeat(file, fmt, va, subrepcount, subrepdelim, subrepcount * alloclen, isfirst);
@@ -173,11 +212,17 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 	char repdelim[MAX_DELIM_LEN], str[STR_LEN];
 	char ch;
 
+	act_fmt = 0;
+	ch = '\0';
+	memset(args, NULL, MAX_ARGS * sizeof(void*));
+	memset(arg_actrep, 0, MAX_ARGS * sizeof(int));
+	memset(reppointer, NULL, 2 * MAX_ARGS * sizeof(void*));
+
 	while(*fmt != '\0')
 	{
 		if(*fmt == '(')
 		{
-			repcount = getRepCount(&fmt, repdelim, &alloc);
+			repcount = getRepCount(&fmt, va, repdelim, &alloc);
 			if(repcount == -1)
 				return 1;
 			if(repeat(file, &fmt, va, repcount, repdelim, alloc * repcount, 1))
