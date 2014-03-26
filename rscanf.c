@@ -50,9 +50,7 @@ static int getRepCount(char **fmt, va_list va, char *repdelim, int *alloc)
 
 				if(reppointer[i][0] == NULL)
 				{
-					int **g = va_arg(va, int**);
-					reppointer[i][0] = *g;
-//					reppointer[i][0] = *(va_arg(va, int**));
+					reppointer[i][0] = *(va_arg(va, int**));
 					num = *((int*)reppointer[i][0]);
 					reppointer[i][1] = *fmt;
 					break;
@@ -214,9 +212,9 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 
 	act_fmt = 0;
 	ch = '\0';
-	memset(args, NULL, MAX_ARGS * sizeof(void*));
+	memset(args, 0, MAX_ARGS * sizeof(void*));
 	memset(arg_actrep, 0, MAX_ARGS * sizeof(int));
-	memset(reppointer, NULL, 2 * MAX_ARGS * sizeof(void*));
+	memset(reppointer, 0, 2 * MAX_ARGS * sizeof(void*));
 
 	while(*fmt != '\0')
 	{
