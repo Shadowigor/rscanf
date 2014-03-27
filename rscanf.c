@@ -167,11 +167,6 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 						((int*)args[act_fmt])[arg_actrep[act_fmt]] = atoi(str);
 						break;
 					
-					case 'c':
-					
-						
-						break;
-					
 					case 's':
 					
 						if(isfirst)
@@ -297,6 +292,13 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 
 					*(va_arg(va, int*)) = atoi(str);
 					break;
+				
+				case 'c':
+				
+					if(ch == '\0')
+						ch = fgetc(file);
+					*(va_arg(va, char*)) = ch;
+					ch = '\0';
 			}
 		}
 		else
