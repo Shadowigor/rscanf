@@ -194,21 +194,19 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 							ch = fgetc(file);
 						
 						i = 0;
-						while(ch != *repdelim && ch != *(*fmt + 1))
+						while(ch != *repdelim && ch != *(*fmt + 1) && ch != EOF && ch != '\0')
 						{	
-							if(ch < '0' || ch > '9')
-								break;
 							((char**)args[act_fmt])[arg_actrep[act_fmt]][i] = ch;
 							ch = fgetc(file);
 							i++;
 							if(i % STR_LEN == 0)
 							{
 								size += STR_LEN;
-								realloc(((char**)args[act_fmt])[arg_actrep[act_fmt]], size * sizeof(char*));
+								((char**)args[act_fmt])[arg_actrep[act_fmt]] = realloc(((char**)args[act_fmt])[arg_actrep[act_fmt]], size * sizeof(char*));
 							}
 						}
 						if(i % STR_LEN == 0)
-							realloc(((char**)args[act_fmt])[arg_actrep[act_fmt]], (size + 1) * sizeof(char*));
+							((char**)args[act_fmt])[arg_actrep[act_fmt]] = realloc(((char**)args[act_fmt])[arg_actrep[act_fmt]], (size + 1) * sizeof(char*));
 						((char**)args[act_fmt])[arg_actrep[act_fmt]][i] = '\0';
 						break;
 				}
@@ -241,11 +239,10 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 			ch = fgetc(file);
 			repdelim++;
 		}
+		repdelim = repdelim_bak;
 
 		(*fmt) = fmt_start;
 	}
-
-	(*fmt)++;
 
 	return 0;
 }
@@ -254,7 +251,6 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 {
 	int repcount, alloc, i;
 	char repdelim[MAX_DELIM_LEN], str[STR_LEN];
-	char ch;
 
 	act_fmt = 0;
 	ch = '\0';
@@ -317,7 +313,7 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 	return 0;
 }
 
-int rfscnaf(FILE *file, char *fmt, ...)
+int rfscanf(FILE *file, char *fmt, ...)
 {
 	va_list va;
 	int x;
