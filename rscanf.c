@@ -98,6 +98,7 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 	int act_fmt_bak;
 	char str[STR_LEN];
 	char *fmt_start, *repdelim_bak;
+	size_t size;
 
 	act_fmt_bak = act_fmt;
 	fmt_start = *fmt;
@@ -164,6 +165,51 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 						str[i] = '\0';
 
 						((int*)args[act_fmt])[arg_actrep[act_fmt]] = atoi(str);
+						break;
+					
+					case 'c':
+					
+						
+						break;
+					
+					case 's':
+					
+						if(isfirst)
+						{
+							if(alloclen > 0)
+							{
+								args[act_fmt] = malloc(alloclen * sizeof(char**));
+								*(va_arg(va, char**)) = args[act_fmt];
+								size = STR_LEN;
+								for(i = 0; i < alloclen; i++)
+									args[act_fmt][i] = malloc(size * sizeof(char*));
+							}
+							else
+							{
+								args[act_fmt] = va_arg(va, char**);
+							}
+						}
+						
+						if(ch == '\0')
+							ch = fgetc(file);
+						
+						i = 0;
+						while(ch != repsep && ch != *(*fmt + 1))
+						{	
+							if(ch < '0' || ch > '9')
+								break;
+							args[act_fmt][arg_actrep[act_fmt]][i] = ch;
+							ch = fgetc(file);
+							i++;
+							if(i % STR_LEN == 0)
+							{
+								size += STR_LEN;
+								realloc(args[act_fmt][arg_actrep[act_fmt]], size * sizeof(char*));
+							}
+						}
+						if(i % STR_LEN == 0)
+							realloc(args[act_fmt][arg_actrep[act_fmt]], (size + 1) * sizeof(char*));
+						args[act_fmt][arg_actrep[act_fmt]][i] = '\0';
 						break;
 				}
 				arg_actrep[act_fmt]++;
