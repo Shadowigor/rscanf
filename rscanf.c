@@ -245,7 +245,7 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 int rvfscanf(FILE *file, char *fmt, va_list va)
 {
 	int repcount, alloc, i;
-	char repdelim[MAX_DELIM_LEN], str[STR_LEN];
+	char repdelim[MAX_DELIM_LEN], str[STR_LEN], *pstr;
 
 	act_fmt = 0;
 	ch = '\0';
@@ -299,6 +299,20 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 						ch = fgetc(file);
 					*(va_arg(va, char*)) = ch;
 					ch = '\0';
+
+				case 's':
+				
+					if(ch == '\0')
+						ch = fgetc(file);
+						
+					pstr = va_arg(va, char*);
+					while(ch != *(*fmt + 1) && ch != EOF && ch != '\0')
+					{	
+						*pstr = ch;
+						ch = fgetc(file);
+						pstr++;
+					}
+					break;
 			}
 		}
 		else
