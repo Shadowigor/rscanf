@@ -43,7 +43,7 @@ static int getRepCount(char **fmt, va_list va, char *repdelim, int *alloc)
 			{
 				if((char*)(reppointer[i][1]) == *fmt)
 				{
-					((int*)reppointer[i][0])++;
+					reppointer[i][0] = ((int*)reppointer[i][0]) + 1;
 					num = *((int*)reppointer[i][0]);
 					break;
 				}
