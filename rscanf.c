@@ -8,9 +8,11 @@
 
 static int act_fmt;
 static void *args[MAX_ARGS];
+static void **argsp[MAX_ARGS];
 static int arg_actrep[MAX_ARGS];
 static char ch;
 static void *reppointer[MAX_ARGS][2];
+static size_t sizes[MAX_ARGS];
 
 static int getRepCount(char **fmt, va_list va, char *repdelim, int *alloc)
 {
@@ -121,7 +123,7 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 				subrepcount = getRepCount(fmt, va, subrepdelim, &suballoc);
 				if(subrepcount < 0)
 					return -5;
-				repeat(file, fmt, va, subrepcount, subrepdelim, subrepcount * alloclen, isfirst);
+				repeat(file, fmt, va, subrepcount, subrepdelim, suballoc * subrepcount,  isfirst);
 				continue;
 			}
 
@@ -142,12 +144,20 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 							if(alloclen > 0)
 							{
 								args[act_fmt] = malloc(alloclen * sizeof(int));
-								*(va_arg(va, void**)) = args[act_fmt];
+								argsp[act_fmt] = va_arg(va, void**);
+								*((int**)argsp[act_fmt]) = args[act_fmt];
+								sizes[act_fmt] = alloclen * sizeof(int);
 							}
 							else
 							{
 								args[act_fmt] = va_arg(va, void*);
 							}
+						}
+						else if(alloclen > 0)
+						{
+							sizes[act_fmt] += alloclen * sizeof(int);
+							args[act_fmt] = realloc(args[act_fmt], sizes[act_fmt]);
+							*((int**)argsp[act_fmt]) = args[act_fmt];
 						}
 
 						if(ch == '\0')
@@ -221,6 +231,7 @@ static int repeat(FILE *file, char **fmt, va_list va, int repcount, char *repdel
 		repcount--;
 		if(repcount <= 0)
 			break;
+		alloclen = 0;
 		isfirst = 0;
 		act_fmt = act_fmt_bak;
 
@@ -252,6 +263,7 @@ int rvfscanf(FILE *file, char *fmt, va_list va)
 	memset(args, 0, MAX_ARGS * sizeof(void*));
 	memset(arg_actrep, 0, MAX_ARGS * sizeof(int));
 	memset(reppointer, 0, 2 * MAX_ARGS * sizeof(void*));
+	memset(sizes, 0, MAX_ARGS * sizeof(int));
 
 	while(*fmt != '\0')
 	{
